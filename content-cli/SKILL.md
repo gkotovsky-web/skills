@@ -1,6 +1,6 @@
 ---
 name: content-cli
-description: Assists with developing and using the Celonis content-cli tool — a TypeScript CLI for managing content (packages, configs, data pools, action flows) across Celonis Platform environments. Use when working in the content-cli repo, adding commands, debugging CLI behavior, or helping users run content-cli commands to transfer content between Celonis teams.
+description: Assists with developing and using the Celonis content-cli tool — a TypeScript CLI for managing content (packages, configs, data pools, action flows) across Celonis Platform environments. Always use this skill when the user mentions content-cli, wants to migrate or sync packages between Celonis teams, export configs to Git, set up CI/CD for Celonis content, or is adding/debugging commands in the content-cli repo — even if they just say something like "how do I move this package to production" or "sync my Celonis config."
 ---
 
 # Content CLI

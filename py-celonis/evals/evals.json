@@ -1,0 +1,23 @@
+{
+  "skill_name": "py-celonis",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a pandas DataFrame with columns CASE_ID, ACTIVITY, and TIMESTAMP that I want to upload to my Celonis data pool called 'AP Automation Pool'. The table should be named ACTIVITIES and replaced if it already exists. Can you write me a script to do this?",
+      "expected_output": "A Python script that uses get_celonis() for auth, finds the pool by name with data_integration.get_data_pools().find(), and calls pool.create_table(df, 'ACTIVITIES', drop_if_exists=True)",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I need to pull data from my Celonis data model 'P2P Analysis' — specifically I want all distinct VENDOR_NAME and INVOICE_AMOUNT values where INVOICE_AMOUNT > 10000. How do I write a PQL query for this in Python and get back a pandas DataFrame?",
+      "expected_output": "A Python snippet using PQL, PQLColumn, PQLFilter from pycelonis.pql, building a query with distinct=True, the correct PQL filter syntax, and calling model.get_data_frame(query)",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I'm trying to navigate the Studio in pycelonis — I want to get to a knowledge model called 'P2P KM' inside a package called 'Procurement Analytics' which lives in a space called 'Finance'. What's the right way to traverse this hierarchy?",
+      "expected_output": "Python code using celonis.studio.get_spaces().find('Finance'), then .get_packages().find('Procurement Analytics'), then .get_knowledge_models().find('P2P KM'), with explanation of the hierarchy",
+      "files": []
+    }
+  ]
+}

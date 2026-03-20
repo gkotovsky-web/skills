@@ -1,0 +1,23 @@
+{
+  "skill_name": "content-cli",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to move our 'AP Automation' package from our dev team (dev.eu-1.celonis.cloud) to production (prod.eu-1.celonis.cloud). I already have profiles set up for both called 'dev' and 'prod'. What content-cli commands do I run?",
+      "expected_output": "A sequence of commands: content-cli pull package -p dev --key <package-key> to get the zip, then content-cli push package -p prod --spaceKey <space-key> -f <package.zip>. Should explain how to find the package key.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "We want to set up a GitHub Actions pipeline that deploys our Celonis packages on every merge to main. We don't want to use a stored profile — just env vars. How do we configure the content-cli commands for CI?",
+      "expected_output": "Explanation of using CELONIS_URL and CELONIS_API_TOKEN environment variables instead of -p <profile>, with example GitHub Actions YAML or at least the shell commands to export env vars and run content-cli push package",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I'm adding a new subcommand to content-cli to list all action flows in a package. Where do I create the file, what should it be named, and how does it hook into the CLI framework?",
+      "expected_output": "Guidance on creating a new *-command.service.ts file in the src/commands/ directory under the appropriate module, following the existing naming pattern, and explanation of how the context (profile, logger, Axios client) is passed to commands",
+      "files": []
+    }
+  ]
+}

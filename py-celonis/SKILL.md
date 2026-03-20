@@ -1,6 +1,6 @@
 ---
 name: py-celonis
-description: Interact with the Celonis EMS platform using the pycelonis 2.0 Python SDK. Use when working with pycelonis, writing Python scripts for Celonis, uploading/downloading data to/from Celonis, querying with PQL, managing data pools/models, or automating Studio content. Triggers: pycelonis, Celonis EMS, PQL, data pool, data model, knowledge model, action flow.
+description: Interact with the Celonis EMS platform using the pycelonis 2.0 Python SDK. Always use this skill when the user is writing any Python code that touches Celonis, mentions pycelonis, wants to upload or download data to/from Celonis, query process data with PQL, manage data pools or data models, or automate anything in Celonis Studio — even if they don't say "pycelonis" explicitly. If the user is doing anything programmatic with Celonis in Python, this skill applies.
 ---
 
 # PyCelonis 2.0
