@@ -217,6 +217,283 @@ df.to_csv("export.csv", index=False)
 
 ---
 
+## Creating Studio Views and Components
+
+Views are created by calling the Celonis blueprint API directly via `pkg.client.request()`. **Do NOT use `pkg.create_view()`** — it has a bug where it serializes config as YAML with a malformed key (`allowAdvancedFilters:`) causing 500 errors.
+
+### Setup
+
+```python
+import json, uuid
+from pycelonis import get_celonis
+
+celonis = get_celonis(base_url="https://team.celonis.cloud", api_token="...")
+space = celonis.studio.get_spaces().find("My Space")
+pkg = space.get_packages().find("My Package")
+client = pkg.client
+km_key = "my-knowledge-model-key"  # from pkg.get_knowledge_models()
+```
+
+### Get column types from data model
+
+```python
+TYPE_MAP = {"STRING": "string", "DATE": "date", "INT": "int", "FLOAT": "float", "BOOLEAN": "boolean", "DATETIME": "date"}
+
+pool = celonis.data_integration.get_data_pool("<pool-id>")
+model = pool.get_data_model("<model-id>")
+
+cols = []
+for t in model.get_tables():
+    if t.name == "t_o_custom_MyObject":
+        for c in t.get_columns():
+            cols.append({"name": c.name, "type": TYPE_MAP.get(c.type_, "string")})
+        break
+```
+
+---
+
+### Building a `table` component
+
+One dataSource with all columns as attributes. Each column in `data.columns` references an attribute by `field` ID.
+
+```python
+alias = "o_custom_MyObject"                  # table alias (no t_ prefix)
+object_prefix = "O_CUSTOM_MYOBJECT"          # uppercase, used in referencedEntity
+
+ds_id = str(uuid.uuid4())
+attributes, columns = [], []
+
+for i, col in enumerate(cols):
+    attr_id = str(uuid.uuid4())
+    attributes.append({
+        "id": attr_id,
+        "pql": f'"{alias}"."{col["name"]}"\n',
+        "columnType": col["type"],
+        "aggregation": False,
+        "description": "",
+        "referencedEntity": {
+            "id": f"{object_prefix}.{col['name'].upper()}",
+            "type": "NATIVE_ATTRIBUTE",
+            "columnType": col["type"]
+        },
+        "shortDisplayName": "",
+        "hasKnowledgeSyncDisplayChanges": True
+    })
+    columns.append({"id": str(uuid.uuid4()), "field": attr_id, "order": (i + 1) * 100})
+
+table_component = {
+    "id": f"table-{str(uuid.uuid4())}",
+    "type": "table",
+    "scope": None,
+    "knowledgeModelKey": None,
+    "excludedTools": None,
+    "settings": {
+        "data": {"columns": columns},
+        "dataSources": [{
+            "id": ds_id,
+            "attributes": attributes,
+            "description": "",
+            "displayName": ds_id,
+            "shortDisplayName": ""
+        }]
+    },
+    "tools": None,
+    "filters": None,
+    "description": None,
+    "semanticLayerId": None
+}
+```
+
+---
+
+### Building a `kpi-list` component
+
+One dataSource **per KPI** (unlike table). The `kpi` field references `"{dataSourceId}.{attributeId}"`.
+
+```python
+# kpis: list of dicts with keys: displayName, pql, columnType, format
+kpis = [
+    {"displayName": "Total Net Order Value", "pql": 'SUM("o_custom_PurchaseOrderItem"."NetOrderValue")', "columnType": "float", "format": ",.3~s"},
+    {"displayName": "Total Order Quantity",   "pql": 'SUM("o_custom_PurchaseOrderItem"."OrderQuantity")', "columnType": "float", "format": ",.3~s"},
+]
+
+data_sources, kpi_refs = [], []
+
+for i, kpi in enumerate(kpis):
+    ds_id   = str(uuid.uuid4())
+    attr_id = str(uuid.uuid4())
+    data_sources.append({
+        "id": ds_id,
+        "attributes": [{
+            "id": attr_id,
+            "pql": kpi["pql"],
+            "columnType": kpi["columnType"],
+            "format": kpi["format"],
+            "aggregation": True,
+            "description": "",
+            "displayName": kpi["displayName"],
+            "shortDisplayName": ""
+        }],
+        "description": "",
+        "displayName": ds_id,
+        "shortDisplayName": ""
+    })
+    kpi_refs.append({"id": str(uuid.uuid4()), "kpi": f"{ds_id}.{attr_id}", "show": True, "order": (i + 1) * 100})
+
+kpi_list_component = {
+    "id": f"kpi-list-{str(uuid.uuid4())}",
+    "type": "kpi-list",
+    "filters": None,
+    "settings": {
+        "data": {"kpis": kpi_refs},
+        "options": {"itemWidthMode": "evenly"},
+        "dataSources": data_sources
+    },
+    "tools": None,
+    "description": None,
+    "semanticLayerId": None
+}
+```
+
+To pull KPI definitions from the knowledge model:
+
+```python
+km = pkg.get_knowledge_models().find("My KM")
+km_content = km.serialized_content
+if isinstance(km_content, str):
+    km_content = json.loads(km_content)
+
+kpis = [
+    {"displayName": k["displayName"], "pql": k["pql"], "columnType": "float", "format": k.get("format", "")}
+    for k in km_content.get("kpis", [])
+]
+```
+
+---
+
+### Creating the view
+
+```python
+def create_view(client, pkg, name, key, km_key, components):
+    """
+    components: list of dicts with:
+        - "component": component object (table, kpi-list, etc.)
+        - "position": {"positionX", "positionY", "width", "height"}
+
+    Grid notes:
+    - Uses a 27-column system (not 12)
+    - Use mode "full-height" to stretch vertically to fill the screen
+    - positionY is 1-based; stack components by incrementing Y
+    """
+    config = {
+        "base": None,
+        "metadata": {
+            "key": key,
+            "name": name,
+            "template": False,
+            "showCaseCount": True,
+            "knowledgeModelKey": km_key,
+            "allowAICapabilities": True,
+            "allowInsightsCapabilities": None,
+            "allowAdvancedFilters": True,
+            "allowScheduledReports": True,
+            "advancedFiltersSettings": {
+                "processFilter": {"active": True},
+                "attributeFilter": {"active": True},
+                "eventLogs": []
+            },
+            "objectCountSettings": None
+        },
+        "variables": None,
+        "layout": None,
+        "grid": {
+            "elements": [
+                {
+                    "id": str(uuid.uuid4()),
+                    "componentId": c["component"]["id"],
+                    "position": c["position"]
+                }
+                for c in components
+            ],
+            "mode": "full-height",
+            "height": None,
+            "width": None
+        },
+        "components": [c["component"] for c in components],
+        "filters": None,
+        "selections": None,
+        "asides": None
+    }
+
+    payload = {
+        "boardAssetType": "BOARD_V2",
+        "configuration": json.dumps(config),
+        "id": None,
+        "inputVariableDefinitions": None,
+        "parentNodeId": pkg.id,
+        "parentNodeKey": pkg.key,
+        "rootNodeKey": pkg.key
+    }
+
+    resp = client.request("POST", "/blueprint/api/boards", json=payload, type_=None)
+    return json.loads(resp.text)
+```
+
+#### Single full-width table
+
+```python
+create_view(client, pkg, "My View", "my-view-key", km_key, [
+    {
+        "component": table_component,
+        "position": {"positionX": 1, "positionY": 1, "width": 27, "height": 36}
+    }
+])
+```
+
+#### KPI list on top + table below
+
+```python
+create_view(client, pkg, "My View", "my-view-key", km_key, [
+    {
+        "component": kpi_list_component,
+        "position": {"positionX": 1, "positionY": 1, "width": 27, "height": 7}
+    },
+    {
+        "component": table_component,
+        "position": {"positionX": 1, "positionY": 8, "width": 27, "height": 36}
+    }
+])
+```
+
+#### Update an existing view (PUT)
+
+```python
+view_id = "<view-id>"
+resp = client.request("GET", f"/blueprint/api/boards/{view_id}", type_=None)
+config = json.loads(resp.text)["configuration"]
+
+# Modify config (add component, update grid, etc.)
+config["components"].append(new_component)
+config["grid"]["elements"].append({
+    "id": str(uuid.uuid4()),
+    "componentId": new_component["id"],
+    "position": {"positionX": 1, "positionY": 1, "width": 27, "height": 36}
+})
+
+payload = {
+    "boardAssetType": "BOARD_V2",
+    "configuration": json.dumps(config),
+    "id": view_id,
+    "inputVariableDefinitions": None,
+    "parentNodeId": pkg.id,
+    "parentNodeKey": pkg.key,
+    "rootNodeKey": pkg.key
+}
+client.request("PUT", f"/blueprint/api/boards/{view_id}", json=payload, type_=None)
+```
+
+---
+
 ## Migration from 1.x → 2.x
 
 - `get_celonis()` replaces `Celonis()` constructor
