@@ -19,9 +19,9 @@ from pycelonis import get_celonis
 # Via environment variables: CELONIS_URL, CELONIS_API_TOKEN
 celonis = get_celonis()
 
-# Or explicit credentials
+# Or explicit credentials — use base_url (NOT celonis_url)
 celonis = get_celonis(
-    celonis_url="demo.eu-1.celonis.cloud",
+    base_url="https://team.celonis.cloud",
     api_token="your_api_token",
 )
 ```
@@ -51,15 +51,33 @@ pool.create_table(df, "MY_TABLE", drop_if_exists=True)
 
 ### Pull Data with PQL
 
+`celonis.data_integration` does NOT have `get_data_models()`. Data models live under a pool:
+
 ```python
 from pycelonis.pql import PQL, PQLColumn, PQLFilter
+import pycelonis.pql as pql
 
-model = celonis.data_integration.get_data_models().find("My Model")
+# Get pool first, then model
+pool = celonis.data_integration.get_data_pool("<pool-id>")
+model = pool.get_data_model("<model-id>")
+
+# List available tables and their aliases
+for t in model.get_tables():
+    print(t.name, "→ alias:", t.alias)
+
 query = PQL()
-query += PQLColumn(name="case_id", query='"TABLE"."CASE_ID"')
-query += PQLFilter('FILTER "TABLE"."ACTIVITY" = \'A\';')
-df = model.get_data_frame(query)
+query += PQLColumn(name="case_id", query='"<table-alias>"."<column>"')
+query += PQLFilter('FILTER "<table-alias>"."<column>" = \'value\';')
+
+# Use SaolaPy (current recommended API)
+df = pql.DataFrame.from_pql(query, data_model=model)
+print(df.head(5))
 ```
+
+**Important: use the table alias in PQL, not the table name.**
+If content-cli shows a table as `t_o_custom_PurchaseOrder`, the PQL alias is `o_custom_PurchaseOrder` (no `t_` prefix). Always call `model.get_tables()` to confirm the correct alias and actual column names before writing PQL queries.
+
+`model.export_data_frame(query)` still works but is deprecated — prefer `pql.DataFrame.from_pql(query, data_model=model)`.
 
 ### Access Studio Content
 

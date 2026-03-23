@@ -7,8 +7,28 @@ description: Assists with developing and using the Celonis content-cli tool — 
 
 ## Quick start
 
+If using the content-cli repo locally (not installed globally), build first:
+
 ```bash
-yarn install && yarn build
+# yarn may not be available — use npm with a temp cache to avoid permission issues
+npm install --cache /tmp/npm-cache && npm run build
+```
+
+The compiled binary is at `dist/content-cli.js`. Run it with:
+
+```bash
+node dist/content-cli.js <command>
+```
+
+Or use env vars for CI/CD (no profile needed):
+
+```bash
+CELONIS_URL=https://team.celonis.cloud CELONIS_API_TOKEN=<token> node dist/content-cli.js <command>
+```
+
+If installed globally (`npm install -g @celonis/content-cli`):
+
+```bash
 content-cli profile create
 content-cli pull package -p <profile> --key <package-key>
 content-cli push package -p <target-profile> --spaceKey <space-key> -f <package.zip>
@@ -26,7 +46,7 @@ content-cli config import -p <profile> --gitProfile <git-prof> --gitBranch main
 
 **CI/CD (no profile):**
 ```bash
-CELONIS_URL=https://team.celonis.cloud CELONIS_API_TOKEN=<token> content-cli <command>
+CELONIS_URL=https://team.celonis.cloud CELONIS_API_TOKEN=<token> node dist/content-cli.js <command>
 ```
 
 ## Command reference
@@ -70,6 +90,17 @@ CELONIS_URL=https://team.celonis.cloud CELONIS_API_TOKEN=<token> content-cli <co
 | `export/import data-pool(s)` | Transfer data pools with dependencies |
 | `list/pull/push/update data-pool` | CRUD on data pools |
 | `list/get/set connection` | Manage connections within a data pool |
+
+**Pulled data pool JSON structure** (`data-pool_<id>.json`):
+- `dataPool` — metadata (name, id, type, status)
+- `dataSources` — connection sources
+- `jobs` — data jobs
+- `extractions` — extraction configs
+- `transformations` — SQL transformations
+- `dataModels` — data models with table listings
+- `schedules`, `poolVariables`, `executionItems`, etc.
+
+> Note: table names in `dataModels[].tables[]` include a `t_` prefix (e.g. `t_o_custom_PurchaseOrder`). When querying via PQL (pycelonis), use the **alias** instead, which drops the prefix (e.g. `o_custom_PurchaseOrder`).
 
 ### Action flows & skills
 | Command | Description |
