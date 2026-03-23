@@ -120,6 +120,31 @@ CELONIS_URL=https://team.celonis.cloud CELONIS_API_TOKEN=<token> node dist/conte
 |---|---|
 | `push ctp` | Push legacy `.CTP` transport file |
 
+## Capabilities
+
+content-cli **transports existing assets between environments** — it does not create assets from scratch. All create/update operations work by pulling from a source and pushing to a target.
+
+| Asset | Create | Read | Update | Notes |
+|---|---|---|---|---|
+| Space | — | ✅ list | — | |
+| Package | — | ✅ list/pull | ✅ push | |
+| View (`BOARD_V2`) | — | ✅ pull | ✅ push | |
+| Analysis | — | ✅ pull | ✅ push | |
+| Knowledge model | — | ✅ pull | ✅ push | |
+| Action flow | ✅ import | ✅ export | ✅ import | |
+| Skill | — | ✅ pull | ✅ push | |
+| Widget | — | — | ✅ push | |
+| Bookmarks | — | ✅ pull | ✅ push | |
+| Package variables | — | ✅ list | — | |
+| Package versions | ✅ create | ✅ get | — | `--bump-major/minor/patch` |
+| Data pool | ✅ import | ✅ export/pull | ✅ push/update | Includes jobs, extractions, transformations, data models, schedules |
+| Data connection | — | ✅ get/list | ✅ set | |
+| Data job | — | ✅ via pool export | ✅ via pool push | |
+| Extraction config | — | ✅ via pool export | ✅ via pool push | |
+| SQL transformation | — | ✅ via pool export | ✅ via pool push | |
+| Process copilot | — | ✅ pull | ✅ push | |
+| Deployment | ✅ create | ✅ list | — | Beta |
+
 ### Global options
 `-p <profile>` · `--gitProfile <name>` · `-q` · `--debug` · `--dev`
 

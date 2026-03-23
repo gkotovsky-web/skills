@@ -87,6 +87,59 @@ pkg = space.get_packages().find("My Package")
 km = pkg.get_knowledge_models().find("My KM")
 ```
 
+## Capabilities
+
+### Data Integration
+
+| Asset | Create | Read | Update |
+|---|---|---|---|
+| Data pool | ✅ | ✅ | — |
+| Data model | ✅ | ✅ | ✅ reload |
+| Table (push DataFrame) | ✅ replace/append/upsert | ✅ query via PQL | ✅ |
+| Data push job | ✅ | ✅ | ✅ execute |
+| Data job / transformation | — | ✅ | ✅ execute |
+
+### Studio Assets
+
+| Asset | Create | Read | Update | Notes |
+|---|---|---|---|---|
+| Space | — | ✅ | — | |
+| Package | — | ✅ | ✅ publish | |
+| View (`BOARD_V2`) | ✅ | ✅ | ✅ | Via `pkg.client` → `/blueprint/api/boards` — do NOT use `pkg.create_view()` (bug) |
+| Knowledge model | ✅ | ✅ | — | Via `pkg.create_knowledge_model()` |
+| Analysis | — | ✅ | — | |
+| Action flow | — | ✅ | — | |
+| Skill | — | ✅ | — | |
+| Process copilot (`studio-copilot`) | ❌ | ✅ | ❌ | Blocked by API: `assetType.not-allowed` — UI only |
+
+### View Components (via `/blueprint/api/boards`)
+
+| Component | Create | Update | Notes |
+|---|---|---|---|
+| `table` | ✅ | ✅ | Full column control via PQL + `referencedEntity` |
+| `kpi-list` | ✅ | ✅ | One dataSource per KPI |
+| `bar-chart` | ✅ | ✅ | Y = ordinal field, X = aggregated KPI via `encodings` |
+| `process-explorer` | ✅ | ✅ | Structure known from existing views |
+| `filter-dropdown` | ✅ | ✅ | Structure known from existing views |
+| `date-range` | ✅ | ✅ | Structure known from existing views |
+| `variant-explorer` | ✅ | ✅ | Structure known from existing views |
+| `image-v2` | ✅ | ✅ | Structure known from existing views |
+
+### Team
+
+| Asset | Create | Read | Update |
+|---|---|---|---|
+| Users | — | ✅ | — |
+| Groups | — | ✅ | — |
+
+### Hard limits
+
+| Asset | Why blocked |
+|---|---|
+| Process copilot (create/update) | `assetType.not-allowed` — managed by a private internal Celonis service |
+| Business Graph object types | Schema defined only via Studio UI |
+| Data model table structure | Can push data but cannot define object type schema programmatically |
+
 ## Advanced Features
 
 See [REFERENCE.md](REFERENCE.md) for:
@@ -95,3 +148,4 @@ See [REFERENCE.md](REFERENCE.md) for:
 - Data model management
 - PQL DataFrame (SaolaPy)
 - Action flows and automation
+- Creating Studio views and components (table, kpi-list, bar-chart)
