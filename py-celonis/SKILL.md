@@ -111,6 +111,7 @@ km = pkg.get_knowledge_models().find("My KM")
 | Action flow | — | ✅ | — | |
 | Skill | — | ✅ | — | |
 | Process copilot (`studio-copilot`) | ❌ | ✅ | ❌ | Blocked by API: `assetType.not-allowed` — UI only |
+| AI annotation builder (`ai-annotations-agent-widget`) | ❌ | ✅ | ❌ | Package-manager POST returns 500; requires a prior `agentId` from a private AI orchestration service that has no accessible public API |
 
 ### View Components (via `/blueprint/api/boards`)
 
@@ -139,6 +140,7 @@ km = pkg.get_knowledge_models().find("My KM")
 | Process copilot (create/update) | `assetType.not-allowed` — managed by a private internal Celonis service |
 | Business Graph object types | Schema defined only via Studio UI |
 | Data model table structure | Can push data but cannot define object type schema programmatically |
+| AI annotation builder (create) | Package-manager POST returns generic 500. Root cause: requires an `agentId` from a private AI orchestration service (not package-manager, not any discoverable public API). The `agentId` is provisioned only when the UI creates the builder. |
 
 ## Advanced Features
 
